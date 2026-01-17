@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFL Sorting Hat</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // --- Icons (Inline SVGs to avoid dependency issues) ---
+        const Trophy = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+        );
+        const Sparkles = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M3 5h4"/><path d="M3 9h4"/></svg>
+        );
+        const RefreshCcw = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+        );
+        const Award = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+        );
+
+        const AFLSortingHat = () => {
+            const [step, setStep] = useState(0);
+            const [scores, setScores] = useState({});
+            const [result, setResult] = useState(null);
+
+            const teams = [
+                {
+                    id: 'COLL',
+                    name: 'Collingwood Magpies',
+                    colors: ['#000000', '#FFFFFF'],
+                    vibe: ['passionate', 'us_vs_world', 'working_class', 'big_club'],
+                    successRating: 9,
+                    description: "The biggest club in the land. You join the Magpie Army for the intense passion, the 'us against the world' mentality, and the sheer noise. Loved by their own, hated by everyone else. Success is expected.",
+                    mascot: '🦅'
+                },
+                {
+                    id: 'CARL',
+                    name: 'Carlton Blues',
+                    colors: ['#0E1E2D', '#FFFFFF'],
+                    vibe: ['arrogant', 'history', 'posh', 'big_club'],
+                    successRating: 8,
+                    description: "Old money, deep history, and a touch of arrogance. You support the Blues because you believe you were born to rule. After years of pain, they are finally a powerhouse again.",
+                    mascot: '🚙'
+                },
+                {
+                    id: 'ESS',
+                    name: 'Essendon Bombers',
+                    colors: ['#000000', '#CC2031'],
+                    vibe: ['big_club', 'history', 'expectant', 'red_black'],
+                    successRating: 6,
+                    description: "A massive club with a rich history but a frustrating recent era. You pick the Bombers if you want to be part of a giant awakening. The 'Sash' is iconic.",
+                    mascot: '✈️'
+                },
+                {
+                    id: 'RICH',
+                    name: 'Richmond Tigers',
+                    colors: ['#000000', '#FED102'],
+                    vibe: ['passionate', 'loud', 'dynasty_recent', 'working_class'],
+                    successRating: 4,
+                    description: "The 'Tiger Army' is a force of nature. Recently a dynasty, now entering a rebuild. Join them if you want raw noise, tribal passion, and the best theme song in the league.",
+                    mascot: '🐅'
+                },
+                {
+                    id: 'HAW',
+                    name: 'Hawthorn Hawks',
+                    colors: ['#4D2004', '#FBBF15'],
+                    vibe: ['family', 'success', 'cheeky', 'entertaining'],
+                    successRating: 9,
+                    description: "The 'Family Club' that loves to win. They play an exciting, cheeky brand of football ('Hokball') and are currently one of the hottest young teams.",
+                    mascot: '🦅'
+                },
+                {
+                    id: 'GEEL',
+                    name: 'Geelong Cats',
+                    colors: ['#1C3C63', '#FFFFFF'],
+                    vibe: ['regional', 'consistent', 'country', 'successful'],
+                    successRating: 9,
+                    description: "The team that never rebuilds. Based in a regional city, they represent the country town spirit with big city success. Pick them if you want a stable, well-run club that wins consistently.",
+                    mascot: '🐈'
+                },
+                {
+                    id: 'MELB',
+                    name: 'Melbourne Demons',
+                    colors: ['#0F1F40', '#CC2031'],
+                    vibe: ['posh', 'history', 'oldest', 'mcc'],
+                    successRating: 7,
+                    description: "The oldest professional football club in the world. Associated with the MCC, cheese platters, and the ski fields. A 'grand old flag' choice for those who appreciate tradition and class.",
+                    mascot: '🔱'
+                },
+                {
+                    id: 'WB',
+                    name: 'Western Bulldogs',
+                    colors: ['#014896', '#FFFFFF', '#C70136'],
+                    vibe: ['underdog', 'working_class', 'scrappy', 'west'],
+                    successRating: 6,
+                    description: "The scrappy underdogs of Melbourne's west. They don't win often, but when they do, it's a fairytale. Pick them if you root for the little guy and have a lot of grit.",
+                    mascot: '🐶'
+                },
+                {
+                    id: 'STK',
+                    name: 'St Kilda Saints',
+                    colors: ['#000000', '#FFFFFF', '#C70136'],
+                    vibe: ['pain', 'loyal', 'bayside', 'hope'],
+                    successRating: 5,
+                    description: "Loyalty through pain. The Saints have only won one premiership (1966) but have a diehard, cool Bayside following. Pick them if you are resilient and loyal.",
+                    mascot: '😇'
+                },
+                {
+                    id: 'NM',
+                    name: 'North Melbourne Kangaroos',
+                    colors: ['#013B9F', '#FFFFFF'],
+                    vibe: ['underdog', 'fighting_spirit', 'shinboner', 'rebuild'],
+                    successRating: 2,
+                    description: "The 'Shinboners'. A small club with a massive heart that prides itself on fighting against the odds. Currently at rock bottom, so the only way is up. The ultimate 'buy low' stock.",
+                    mascot: '🦘'
+                },
+                {
+                    id: 'SYD',
+                    name: 'Sydney Swans',
+                    colors: ['#ED171F', '#FFFFFF'],
+                    vibe: ['culture', 'consistent', 'interstate', 'bloods'],
+                    successRating: 9,
+                    description: "Known for the 'Bloods Culture'—hard work, discipline, and consistency. They rarely bottom out. Perfect if you live in Sydney or want a team that is respected by everyone for their effort.",
+                    mascot: '🦢'
+                },
+                {
+                    id: 'BRIS',
+                    name: 'Brisbane Lions',
+                    colors: ['#7A003C', '#FDBE57', '#00305E'],
+                    vibe: ['interstate', 'entertaining', 'powerhouse', 'fitzroy'],
+                    successRating: 10,
+                    description: "The current powerhouse. A merger of Queensland flair and Fitzroy grit. They play an exciting brand of footy and are in a golden era. A great choice if you like winning and sunny weather.",
+                    mascot: '🦁'
+                },
+                {
+                    id: 'PORT',
+                    name: 'Port Adelaide Power',
+                    colors: ['#000000', '#008A99', '#FFFFFF'],
+                    vibe: ['history', 'us_vs_world', 'passionate', 'teal'],
+                    successRating: 8,
+                    description: "A club with deep historical roots in the SANFL that entered the AFL with a chip on its shoulder. Their fans are fanatical ('Never Tear Us Apart'). Pick them for deep culture and teal colours.",
+                    mascot: '⚡'
+                },
+                {
+                    id: 'ADEL',
+                    name: 'Adelaide Crows',
+                    colors: ['#002B5C', '#E21937', '#FFD200'],
+                    vibe: ['pride_of_sa', 'big_club', 'interstate', 'hoops'],
+                    successRating: 5,
+                    description: "The 'Pride of South Australia'. A massive club representing the state. They have a huge, polite, but expectant fan base. Currently building a young, exciting list.",
+                    mascot: '🐦'
+                },
+                {
+                    id: 'WC',
+                    name: 'West Coast Eagles',
+                    colors: ['#003087', '#F2A900'],
+                    vibe: ['big_club', 'wealthy', 'west', 'rebuild'],
+                    successRating: 3,
+                    description: "A financial juggernaut from the West. Historically very successful, currently in a deep rebuild but with exciting young talent. Join the climb back to the top.",
+                    mascot: '🦅'
+                },
+                {
+                    id: 'FRE',
+                    name: 'Fremantle Dockers',
+                    colors: ['#2A0D54', '#FFFFFF'],
+                    vibe: ['cool', 'underdog', 'unique_color', 'west'],
+                    successRating: 7,
+                    description: "The 'cool' alternative in the West. They wear purple, have working-class roots, and a great vibe. They have never won a premiership, so you'd be joining the quest for the maiden flag.",
+                    mascot: '⚓'
+                },
+                {
+                    id: 'GWS',
+                    name: 'GWS Giants',
+                    colors: ['#F47920', '#30353A', '#FFFFFF'],
+                    vibe: ['new', 'orange', 'fun', 'big_sound'],
+                    successRating: 8,
+                    description: "The 'Big Big Sound'. The newest team with the catchiest song and an all-orange kit. They are fun, fast, and very talented. A great choice if you want to be different and avoid old baggage.",
+                    mascot: '🍊'
+                },
+                {
+                    id: 'GC',
+                    name: 'Gold Coast Suns',
+                    colors: ['#E11D37', '#FFD510', '#0055A4'],
+                    vibe: ['new', 'beach', 'struggle', 'sunny'],
+                    successRating: 4,
+                    description: "The Suns. Based on the Gold Coast, they struggle for success but offer a relaxed, beachy vibe. Support them if you are patient and want to be there when they finally make history.",
+                    mascot: '☀️'
+                }
+            ];
+
+            const questions = [
+                {
+                    text: "First things first: How important is winning *right now*?",
+                    options: [
+                        { text: "Vital. I need a team that contends for trophies immediately.", impact: { successRating: 2 } },
+                        { text: "I don't mind waiting a few years if the future is bright.", impact: { successRating: 0 } },
+                        { text: "I love a rebuild. I want to buy stocks at the bottom.", impact: { successRating: -2, vibe: 'rebuild' } },
+                        { text: "I enjoy the pain. Losing builds character.", impact: { vibe: 'pain' } }
+                    ]
+                },
+                {
+                    text: "Which colour palette draws your eye?",
+                    options: [
+                        { text: "Classic & Traditional (Black/White, Navy/White)", impact: { vibe: ['history', 'big_club'] } },
+                        { text: "Bold & Sharp (Red/Black, Yellow/Black)", impact: { vibe: 'power' } },
+                        { text: "Unique & Modern (Purple, Teal, Orange)", impact: { vibe: ['unique_color', 'new'] } },
+                        { text: "Earthy (Brown & Gold)", impact: { id: 'HAW' } }
+                    ]
+                },
+                {
+                    text: "What is your 'Vibe' on a Saturday night?",
+                    options: [
+                        { text: "At the local pub with 50 mates making noise.", impact: { vibe: ['working_class', 'passionate'] } },
+                        { text: "A nice wine bar or private members club.", impact: { vibe: ['posh', 'silvertail', 'mcc'] } },
+                        { text: "A family BBQ in the suburbs.", impact: { vibe: ['family', 'suburban'] } },
+                        { text: "Something new, trendy, and maybe a bit loud.", impact: { vibe: ['new', 'entertaining', 'cool'] } }
+                    ]
+                },
+                {
+                    text: "How do you feel about 'Us vs Them'?",
+                    options: [
+                        { text: "I want everyone to hate us because we're huge.", impact: { vibe: ['us_vs_world', 'arrogant', 'big_club'] } },
+                        { text: "I want to be respected for our culture.", impact: { vibe: ['culture', 'consistent'] } },
+                        { text: "I want to be the scrappy underdog everyone secretly likes.", impact: { vibe: ['underdog', 'fighting_spirit'] } },
+                        { text: "I don't care about others, I just want fun footy.", impact: { vibe: ['entertaining', 'fun'] } }
+                    ]
+                },
+                {
+                    text: "Geography: Does location matter?",
+                    options: [
+                        { text: "Heart of Melbourne (MCG is home).", impact: { vibe: 'vic_metro' } },
+                        { text: "Melbourne's Suburbs/Geelong.", impact: { vibe: 'suburban' } },
+                        { text: "Interstate pride (WA, SA, QLD, NSW).", impact: { vibe: 'interstate' } },
+                        { text: "No preference.", impact: {} }
+                    ]
+                }
+            ];
+
+            const handleAnswer = (impact) => {
+                const newScores = { ...scores };
+
+                if (impact.id) {
+                    newScores[impact.id] = (newScores[impact.id] || 0) + 5;
+                }
+
+                if (impact.vibe) {
+                    const vibes = Array.isArray(impact.vibe) ? impact.vibe : [impact.vibe];
+                    teams.forEach(team => {
+                        const matchCount = vibes.filter(v => team.vibe.includes(v)).length;
+                        if (matchCount > 0) {
+                            newScores[team.id] = (newScores[team.id] || 0) + (matchCount * 3);
+                        }
+                    });
+                }
+
+                if (impact.successRating !== undefined) {
+                    teams.forEach(team => {
+                        if (impact.successRating > 0) {
+                            newScores[team.id] = (newScores[team.id] || 0) + team.successRating;
+                        } 
+                        else if (impact.successRating < 0) {
+                            newScores[team.id] = (newScores[team.id] || 0) + (10 - team.successRating);
+                        }
+                    });
+                }
+
+                setScores(newScores);
+
+                if (step < questions.length - 1) {
+                    setStep(step + 1);
+                } else {
+                    calculateResult(newScores);
+                }
+            };
+
+            const calculateResult = (finalScores) => {
+                let bestTeam = teams[0];
+                let highestScore = -1;
+
+                teams.forEach(team => {
+                    const score = finalScores[team.id] || 0;
+                    if (score > highestScore) {
+                        highestScore = score;
+                        bestTeam = team;
+                    }
+                });
+                setResult(bestTeam);
+            };
+
+            const resetQuiz = () => {
+                setStep(0);
+                setScores({});
+                setResult(null);
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4 text-slate-800">
+                    <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+                        
+                        {/* Header */}
+                        <div className="bg-gradient-to-r from-green-800 to-green-600 p-6 text-center text-white relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[120%] h-[150%] border-[20px] border-white rounded-[50%]"></div>
+                            </div>
+                            <h1 className="text-3xl font-bold relative z-10 flex items-center justify-center gap-2">
+                                <Trophy className="w-8 h-8 text-yellow-300" />
+                                AFL Sorting Hat
+                            </h1>
+                            <p className="text-green-100 mt-2 relative z-10">Discover which guernsey you were born to wear</p>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-8">
+                            {!result ? (
+                                <div className="space-y-6">
+                                    <div className="flex justify-between items-center text-sm font-medium text-slate-400 uppercase tracking-wider">
+                                        <span>Question {step + 1} of {questions.length}</span>
+                                        <span>{Math.round(((step) / questions.length) * 100)}% Complete</span>
+                                    </div>
+                                    
+                                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                        <div 
+                                            className="bg-green-600 h-full transition-all duration-500 ease-out"
+                                            style={{ width: `${((step) / questions.length) * 100}%` }}
+                                        ></div>
+                                    </div>
+
+                                    <h2 className="text-2xl font-semibold text-slate-800 leading-snug">
+                                        {questions[step].text}
+                                    </h2>
+
+                                    <div className="grid gap-3 pt-4">
+                                        {questions[step].options.map((option, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => handleAnswer(option.impact)}
+                                                className="group relative flex items-center w-full p-4 text-left border-2 border-slate-100 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all duration-200 active:scale-[0.98]"
+                                            >
+                                                <div className="flex-1">
+                                                    <span className="font-medium text-slate-700 group-hover:text-green-700">{option.text}</span>
+                                                </div>
+                                                <Sparkles className="w-5 h-5 text-slate-300 group-hover:text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                    <div className="mb-6 inline-block">
+                                        <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-sm font-medium uppercase tracking-wide">
+                                            The Hat has decided
+                                        </span>
+                                    </div>
+                                    
+                                    <div 
+                                        className="mx-auto w-32 h-32 rounded-full flex items-center justify-center text-6xl shadow-inner mb-6 border-4 border-white ring-4"
+                                        style={{ 
+                                            backgroundColor: result.colors[0], 
+                                            color: result.colors[1] === '#FFFFFF' ? 'white' : result.colors[1],
+                                            borderColor: result.colors[1] || 'white',
+                                            '--tw-ring-color': result.colors[0]
+                                        }}
+                                    >
+                                        {result.mascot}
+                                    </div>
+
+                                    <h2 className="text-4xl font-extrabold mb-2" style={{ color: result.colors[0] }}>
+                                        {result.name}
+                                    </h2>
+                                    
+                                    <div className="flex justify-center gap-2 mb-6">
+                                         {result.vibe.slice(0, 3).map(v => (
+                                             <span key={v} className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500 uppercase font-bold tracking-wide">
+                                                 {v.replace(/_/g, ' ')}
+                                             </span>
+                                         ))}
+                                    </div>
+
+                                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 text-left relative">
+                                         <p className="text-lg text-slate-700 leading-relaxed">
+                                             {result.description}
+                                         </p>
+                                         <div className="mt-4 flex items-center gap-2 text-sm text-slate-500 font-medium">
+                                                <Award className="w-4 h-4" />
+                                                <span>Chance of Success: {result.successRating}/10</span>
+                                         </div>
+                                         <div className="absolute top-0 right-0 w-2 h-full rounded-r-xl" style={{ backgroundColor: result.colors[0] }}></div>
+                                    </div>
+
+                                    <div className="mt-8">
+                                        <button
+                                            onClick={resetQuiz}
+                                            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-slate-800 text-white font-medium hover:bg-slate-900 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                                        >
+                                            <RefreshCcw className="w-4 h-4" />
+                                            Start Again
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AFLSortingHat />);
+    </script>
+</body>
+</html>
+
